@@ -1,10 +1,18 @@
-```
-________________________________
-___   |/  /_  __ \_  ___/__  __/
-__  /|_/ /_  / / /____ \__  /   
-_  /  / / / /_/ /____/ /_  /    
-/_/  /_/  \____/______/ /_/
-```
+## TODO
+switch build flow
+@babel/preset-env
+
+mjs extensible class
+
+result create min version umd.
+use steal-tools.
+
+
+
+
+
+
+
 
 # Monadic streams for reactive programming
 

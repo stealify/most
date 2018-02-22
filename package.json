@@ -48,11 +48,12 @@
   "author": "brian@hovercraftstudios.com",
   "license": "MIT",
   "devDependencies": {
+    "@most/eslint-config-most": "^1.0.3",
     "@most/hold": "^2.0.0",
     "babel-eslint": "^8.0.2",
     "babel-polyfill": "^6.20.0",
     "buba": "^4.0.1",
-    "buster": "^0.7.18",
+    "buster": "https://github.com/busterjs/buster",
     "cpy-cli": "^1.0.1",
     "eslint-plugin-flowtype": "^2.39.1",
     "flow-bin": "^0.59.0",
@@ -62,6 +63,7 @@
     "rollup-plugin-node-resolve": "^3.0.0",
     "snazzy": "^7.0.0",
     "standard": "^10.0.3",
+    "steal-tools": "^1.11.3",
     "transducers-js": "^0.4.174",
     "uglify-js": "^3.0.11"
   },

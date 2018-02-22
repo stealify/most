@@ -1,6 +1,8 @@
 /** @license MIT License (c) copyright 2010-2016 original author or authors */
 /** @author Brian Cavalier */
 /** @author John Hann */
+/** @license Apache-2.0 License (c) copyright 2019 authors */
+/** @author Frank Lemanschik */
 
 /* eslint import/first: 0 */
 
@@ -705,3 +707,91 @@ export { defaultScheduler }
 import PropagateTask from './scheduler/PropagateTask'
 
 export { PropagateTask }
+
+
+export class FromStreamDisposable {
+    constructor(source, sink) {
+        this.source = source;
+        this.sink = sink;
+        this.disposed = false;
+    }
+    dispose() {
+        if (this.disposed)
+            return;
+        this.disposed = true;
+        const remaining = this.source.remove(this.sink);
+        return remaining === 0 && this.source._dispose();
+    }
+}
+
+
+
+
+export function addListeners(stream, endEventName, dataEventName, sink, scheduler) {
+    const event = (value) => scheduler.asap(PropagateTask.event(value, sink));
+    const error = (err) => scheduler.asap(PropagateTask.error(err, sink));
+    const end = (value) => scheduler.asap(PropagateTask.end(value, sink));
+    stream.addListener(dataEventName, event);
+    stream.addListener(endEventName, end);
+    stream.addListener('error', error);
+    return {
+        dispose() {
+            stream.removeListener(dataEventName, event);
+            stream.removeListener(endEventName, end);
+            stream.removeListener('error', error);
+        },
+    };
+}
+
+export class FromStream extends multicast {
+    constructor(stream, endEventName, dataEventName) {
+        super(never().source);
+        this.stream = stream;
+        this.endEventName = endEventName;
+        this.dataEventName = dataEventName;
+    }
+    run(sink, scheduler) {
+        const n = this.add(sink);
+        if (n === 1) {
+            const stream = this.stream;
+            this._disposable =
+                addListeners(stream, this.endEventName, this.dataEventName, sink, scheduler);
+            if (typeof stream.resume === 'function') {
+                stream.resume();
+            }
+        }
+        return new FromStreamDisposable(this, sink);
+    }
+}
+
+export function fromStream(nodeStream, options = {}) {
+    const { endEventName = 'end', dataEventName = 'data' } = options;
+    if (typeof nodeStream.pause === 'function')
+        nodeStream.pause();
+    return new Stream(new FromStream(nodeStream, endEventName, dataEventName));
+}
+
+export function fromReadable(nodeStream, dataEventName = 'data') {
+    return fromStream(nodeStream, { dataEventName, endEventName: 'end' });
+}
+
+export function fromWritable(nodeStream) {
+    return fromStream(nodeStream, { endEventName: 'finish' });
+}
+
+export function toWritable(nodeStream, stream) {
+    return stream.subscribe({
+        next(x) {
+            nodeStream.write(x);
+        },
+        error(e) {
+            nodeStream.emit('error', e);
+        },
+        complete() {
+            // process.stdout && process.stderr are not closable
+            if (!nodeStream.isStdio) {
+                nodeStream.end();
+            }
+        },
+    });
+}
